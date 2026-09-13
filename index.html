@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0f172a">
   <meta name="description" content="Изучение химических элементов — карточки, викторина, произношение">
   <title>Элементы · Химия</title>
@@ -69,8 +69,11 @@
         <button id="viewToggle" class="icon-btn" aria-label="Переключить вид" title="Карточки / Таблица">
           <svg width="22" height="22"><use href="#icon-table"/></svg>
         </button>
-        <button id="quizBtn" class="icon-btn quiz-btn" aria-label="Викторина" title="Викторина">
+        <button id="quizBtn" class="icon-btn quiz-btn" aria-label="Викторина" title="Викторина (выбор варианта)">
           <svg width="22" height="22"><use href="#icon-quiz"/></svg>
+        </button>
+        <button id="testBtn" class="icon-btn test-btn" aria-label="Тест с нуля" title="Тест: написать с нуля">
+          <svg width="22" height="22"><use href="#icon-flask"/></svg>
         </button>
       </div>
     </div>
@@ -110,11 +113,65 @@
         </div>
         <div id="quizQuestion" class="quiz-question"></div>
         <div id="quizOptions" class="quiz-options"></div>
-        <div id="quizFeedback" class="quiz-feedback"></div>
+        <div id="quizFeedback" class="quiz-feedback" aria-live="polite"></div>
         <div class="quiz-actions">
           <button id="nextQuiz" class="btn primary hidden">Следующий →</button>
           <button id="restartQuiz" class="btn secondary hidden">Начать заново</button>
           <button id="exitQuiz" class="btn outline">Выйти</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="testView" class="quiz-view hidden">
+      <div class="quiz-card test-card">
+        <div class="quiz-header">
+          <div class="quiz-progress-bar">
+            <div class="quiz-progress-fill" id="testProgressFill"></div>
+          </div>
+          <div class="quiz-progress-text">Элемент <span id="testNum">1</span> из <span id="testTotal">29</span> · Счёт: <span id="testScore">0</span></div>
+        </div>
+
+        <div id="testQuestionBlock">
+          <div class="test-question">
+            <span class="test-question-label">Напишите с нуля для элемента:</span>
+            <div class="test-element-name" id="testElementName"></div>
+          </div>
+
+          <form id="testForm" autocomplete="off">
+            <label class="test-field">
+              <span>Символ элемента</span>
+              <input type="text" id="testSymbol" class="test-input" placeholder="например, Na">
+              <span class="field-feedback" id="feedbackSymbol"></span>
+            </label>
+            <label class="test-field">
+              <span>Валентность</span>
+              <input type="text" id="testValence" class="test-input" placeholder="например, I или II, IV">
+              <span class="field-feedback" id="feedbackValence"></span>
+            </label>
+            <label class="test-field">
+              <span>Как читается символ</span>
+              <input type="text" id="testPron" class="test-input" placeholder="например, натрий">
+              <span class="field-feedback" id="feedbackPron"></span>
+            </label>
+            <button type="submit" id="checkTest" class="btn primary">Проверить</button>
+          </form>
+        </div>
+
+        <div id="testFeedback" class="quiz-feedback" aria-live="polite"></div>
+
+        <div class="quiz-actions">
+          <button id="nextTest" class="btn primary hidden">Следующий →</button>
+          <button id="exitTest" class="btn outline">Выйти</button>
+        </div>
+      </div>
+
+      <div id="testSummary" class="quiz-card test-summary hidden">
+        <h2 class="test-summary-title">Тест завершён!</h2>
+        <div class="test-summary-score" id="testSummaryScore"></div>
+        <div class="test-summary-list" id="testSummaryList"></div>
+        <div class="quiz-actions">
+          <button id="restartTest" class="btn secondary">Пройти заново</button>
+          <button id="exitTestSummary" class="btn outline">Выйти</button>
         </div>
       </div>
     </div>
@@ -131,4 +188,4 @@
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
-</html> 
+</html>
