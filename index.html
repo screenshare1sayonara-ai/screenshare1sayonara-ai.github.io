@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0f172a">
+  <title>Изучение химических элементов</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="header">
+    <div class="header-top">
+      <h1 class="logo">🧪 Элементы</h1>
+      <div class="header-actions">
+        <button id="themeToggle" class="icon-btn" aria-label="Сменить тему" title="Тема">
+          <span class="theme-icon">🌙</span>
+        </button>
+        <button id="viewToggle" class="icon-btn" aria-label="Переключить вид" title="Карточки / Таблица">
+          <span>📊</span>
+        </button>
+        <button id="quizBtn" class="icon-btn" aria-label="Викторина" title="Викторина">
+          <span>❓</span>
+        </button>
+      </div>
+    </div>
+    <div class="search-bar">
+      <input type="search" id="searchInput" placeholder="Поиск по названию или символу..." autocomplete="off">
+      <button id="clearSearch" class="clear-btn" aria-label="Очистить">×</button>
+    </div>
+    <div class="filters" id="filters">
+      <button class="filter-btn active" data-filter="all">Все</button>
+      <button class="filter-btn" data-filter="alkali">Щелочные</button>
+      <button class="filter-btn" data-filter="alkaline-earth">Щёлочноземельные</button>
+      <button class="filter-btn" data-filter="transition">Переходные</button>
+      <button class="filter-btn" data-filter="post-transition">Постпереходные</button>
+      <button class="filter-btn" data-filter="nonmetal">Неметаллы</button>
+      <button class="filter-btn" data-filter="halogen">Галогены</button>
+      <button class="filter-btn" data-filter="metalloid">Металлоиды</button>
+      <button class="filter-btn" data-filter="studied">Изучено</button>
+      <button class="filter-btn" data-filter="to-review">Повторить</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="cardsView" class="cards-grid"></div>
+    <div id="tableView" class="table-view hidden"></div>
+    <div id="quizView" class="quiz-view hidden">
+      <div class="quiz-card">
+        <div class="quiz-progress">Вопрос <span id="quizNum">1</span> / <span id="quizTotal">10</span></div>
+        <div id="quizQuestion" class="quiz-question"></div>
+        <div id="quizOptions" class="quiz-options"></div>
+        <div id="quizFeedback" class="quiz-feedback"></div>
+        <button id="nextQuiz" class="btn primary hidden">Следующий</button>
+        <button id="restartQuiz" class="btn secondary hidden">Начать заново</button>
+        <button id="exitQuiz" class="btn outline">Выйти</button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>Прогресс: <span id="progressText">0 / 0</span> изучено</p>
+    <button id="resetProgress" class="btn-text">Сбросить прогресс</button>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
