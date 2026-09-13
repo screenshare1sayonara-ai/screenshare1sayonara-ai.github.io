@@ -645,6 +645,142 @@ body {
   gap: 8px;
 }
 
+/* Test (type-from-scratch) mode */
+.test-btn {
+  background: linear-gradient(135deg, #10b981, #0ea5e9);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 14px -2px rgb(16 185 129 / 0.4);
+}
+
+.test-btn:hover {
+  color: #fff;
+  filter: brightness(1.08);
+  background: linear-gradient(135deg, #10b981, #0ea5e9);
+}
+
+.test-card {
+  text-align: left;
+}
+
+.test-question {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.test-question-label {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.test-element-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.test-field {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.test-field > span:first-child {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.test-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1rem;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.test-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.test-input:disabled {
+  opacity: 0.85;
+}
+
+.field-feedback {
+  display: block;
+  min-height: 18px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.field-feedback.ok { color: var(--success); }
+.field-feedback.bad { color: var(--danger); }
+
+.test-summary {
+  text-align: center;
+}
+
+.test-summary-title {
+  font-size: 1.4rem;
+  margin-bottom: 10px;
+}
+
+.test-summary-score {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 18px;
+}
+
+.test-summary-list {
+  text-align: left;
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 18px;
+}
+
+.test-summary-subtitle {
+  font-weight: 650;
+  margin-bottom: 10px;
+}
+
+.test-summary-perfect {
+  color: var(--success);
+  font-weight: 600;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.test-mistake {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  background: var(--bg);
+}
+
+.test-mistake-name {
+  font-weight: 650;
+  margin-bottom: 2px;
+}
+
+.test-mistake-detail {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;
