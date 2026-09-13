@@ -2,23 +2,45 @@
   "use strict";
 
   // ===== State =====
-  let progress = JSON.parse(localStorage.getItem("chemProgress") || "{}");
+  let progress = safeParseJSON(localStorage.getItem("chemProgress"), {});
   let currentFilter = "all";
   let searchQuery = "";
-  let viewMode = "cards"; // cards | table | quiz
+  let viewMode = "cards"; // cards | table | quiz | test
   let quizState = null;
+  let testState = null;
   let preferredVoice = null;
+
+  function safeParseJSON(raw, fallback) {
+    if (!raw) return fallback;
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
 
   // ===== DOM =====
   const cardsView = document.getElementById("cardsView");
   const tableView = document.getElementById("tableView");
   const quizView = document.getElementById("quizView");
+  const testView = document.getElementById("testView");
   const searchInput = document.getElementById("searchInput");
   const clearSearch = document.getElementById("clearSearch");
   const filtersEl = document.getElementById("filters");
   const themeToggle = document.getElementById("themeToggle");
   const viewToggle = document.getElementById("viewToggle");
   const quizBtn = document.getElementById("quizBtn");
+  const testBtn = document.getElementById("testBtn");
   const progressText = document.getElementById("progressText");
   const resetProgress = document.getElementById("resetProgress");
 
@@ -34,7 +56,8 @@
   document.body.appendChild(speakingOverlay);
 
   // ===== Theme =====
-  const savedTheme = localStorage.getItem("chemTheme") || "light";
+  const systemPrefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const savedTheme = localStorage.getItem("chemTheme") || (systemPrefersDark ? "dark" : "light");
   document.documentElement.setAttribute("data-theme", savedTheme);
   updateThemeIcon();
 
@@ -335,7 +358,7 @@
     viewMode = "quiz";
     showView("quiz");
 
-    const shuffled = [...ELEMENTS].sort(() => Math.random() - 0.5).slice(0, 10);
+    const shuffled = shuffle(ELEMENTS).slice(0, 10);
     quizState = {
       questions: shuffled.map((el) => {
         const type = Math.random() > 0.5 ? "symbol" : "name";
@@ -360,7 +383,7 @@
             ? `Какой элемент имеет символ «${el.symbol}»?`
             : `Какой символ у элемента «${el.nameRu}»?`,
           correct: type === "symbol" ? el.nameRu : el.symbol,
-          options: options.sort(() => Math.random() - 0.5)
+          options: shuffle(options)
         };
       }),
       index: 0,
@@ -441,10 +464,11 @@
     cardsView.classList.toggle("hidden", mode !== "cards");
     tableView.classList.toggle("hidden", mode !== "table");
     quizView.classList.toggle("hidden", mode !== "quiz");
+    testView.classList.toggle("hidden", mode !== "test");
   }
 
   viewToggle.addEventListener("click", () => {
-    if (viewMode === "quiz") return;
+    if (viewMode === "quiz" || viewMode === "test") return;
     viewMode = viewMode === "cards" ? "table" : "cards";
     const use = viewToggle.querySelector("use");
     use.setAttribute("href", viewMode === "cards" ? "#icon-table" : "#icon-grid");
@@ -452,7 +476,196 @@
     render();
   });
 
-  quizBtn.addEventListener("click", startQuiz);
+  quizBtn.addEventListener("click", () => {
+    if (viewMode === "test") exitTestToCards();
+    startQuiz();
+  });
+
+  testBtn.addEventListener("click", () => {
+    if (viewMode === "quiz") { viewMode = "cards"; showView("cards"); }
+    startTest();
+  });
+
+  // ===== Test (type-from-scratch) mode =====
+  const testForm = document.getElementById("testForm");
+  const testSymbolInput = document.getElementById("testSymbol");
+  const testValenceInput = document.getElementById("testValence");
+  const testPronInput = document.getElementById("testPron");
+  const testQuestionBlock = document.getElementById("testQuestionBlock");
+  const testSummaryEl = document.getElementById("testSummary");
+  const testCardEl = document.querySelector("#testView .test-card");
+
+  function normalizeText(str) {
+    return (str || "")
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/ё/g, "е")
+      .replace(/\s+/g, " ");
+  }
+
+  function normalizeSymbol(str) {
+    return normalizeText(str).replace(/\s+/g, "");
+  }
+
+  function normalizeValence(str) {
+    // Strip parenthetical detail like "(−1, +1)" — only the roman-numeral
+    // part is required to answer correctly.
+    const core = (str || "").toString().split("(")[0];
+    return core
+      .toLowerCase()
+      .split(/[,;\s]+/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .sort()
+      .join(",");
+  }
+
+  function checkField(userVal, correctVal, normalizer) {
+    return normalizer(userVal) === normalizer(correctVal) && normalizer(userVal).length > 0;
+  }
+
+  function startTest() {
+    viewMode = "test";
+    showView("test");
+    testSummaryEl.classList.add("hidden");
+    testCardEl.classList.remove("hidden");
+
+    testState = {
+      order: shuffle(ELEMENTS), // all 29 elements, mixed order
+      index: 0,
+      score: 0,
+      results: [], // { el, userSymbol, userValence, userPron, correctAll }
+      answered: false
+    };
+    renderTestQuestion();
+  }
+
+  function renderTestQuestion() {
+    const total = testState.order.length;
+    const current = testState.index + 1;
+    const el = testState.order[testState.index];
+
+    document.getElementById("testNum").textContent = current;
+    document.getElementById("testTotal").textContent = total;
+    document.getElementById("testScore").textContent = testState.score;
+    document.getElementById("testProgressFill").style.width = `${((current - 1) / total) * 100}%`;
+    document.getElementById("testElementName").textContent = el.nameRu;
+
+    testState.answered = false;
+    testForm.reset();
+    ["Symbol", "Valence", "Pron"].forEach((f) => {
+      document.getElementById(`feedback${f}`).textContent = "";
+      document.getElementById(`feedback${f}`).className = "field-feedback";
+    });
+    document.getElementById("testFeedback").textContent = "";
+    document.getElementById("checkTest").classList.remove("hidden");
+    document.getElementById("nextTest").classList.add("hidden");
+    [testSymbolInput, testValenceInput, testPronInput].forEach((inp) => (inp.disabled = false));
+    testSymbolInput.focus();
+  }
+
+  testForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (testState.answered) return;
+    testState.answered = true;
+
+    const el = testState.order[testState.index];
+    const okSymbol = checkField(testSymbolInput.value, el.symbol, normalizeSymbol);
+    const okValence = checkField(testValenceInput.value, el.valence, normalizeValence);
+    const okPron = checkField(testPronInput.value, el.pronunciation, normalizeText);
+    const allCorrect = okSymbol && okValence && okPron;
+
+    function markField(inputEl, feedbackId, ok, correctAnswer) {
+      inputEl.disabled = true;
+      const fb = document.getElementById(feedbackId);
+      if (ok) {
+        fb.textContent = "Верно ✓";
+        fb.className = "field-feedback ok";
+      } else {
+        fb.textContent = `Верный ответ: ${correctAnswer}`;
+        fb.className = "field-feedback bad";
+      }
+    }
+
+    markField(testSymbolInput, "feedbackSymbol", okSymbol, el.symbol);
+    markField(testValenceInput, "feedbackValence", okValence, el.valence);
+    markField(testPronInput, "feedbackPron", okPron, el.pronunciation);
+
+    if (allCorrect) testState.score++;
+    testState.results.push({
+      el,
+      userSymbol: testSymbolInput.value,
+      userValence: testValenceInput.value,
+      userPron: testPronInput.value,
+      allCorrect
+    });
+
+    document.getElementById("testScore").textContent = testState.score;
+    const feedback = document.getElementById("testFeedback");
+    feedback.textContent = allCorrect ? "Всё верно! 🎉" : "Есть ошибки — смотрите подсказки выше.";
+    feedback.style.color = allCorrect ? "var(--success)" : "var(--danger)";
+
+    document.getElementById("checkTest").classList.add("hidden");
+    document.getElementById("nextTest").classList.remove("hidden");
+    document.getElementById("nextTest").textContent =
+      testState.index < testState.order.length - 1 ? "Следующий →" : "Показать результат";
+  });
+
+  document.getElementById("nextTest").addEventListener("click", () => {
+    if (testState.index < testState.order.length - 1) {
+      testState.index++;
+      renderTestQuestion();
+    } else {
+      showTestSummary();
+    }
+  });
+
+  function showTestSummary() {
+    const total = testState.order.length;
+    document.getElementById("testProgressFill").style.width = "100%";
+    testCardEl.classList.add("hidden");
+    testSummaryEl.classList.remove("hidden");
+
+    document.getElementById("testSummaryScore").textContent =
+      `Результат: ${testState.score} из ${total} (${Math.round((testState.score / total) * 100)}%)`;
+
+    const listEl = document.getElementById("testSummaryList");
+    listEl.innerHTML = "";
+    const mistakes = testState.results.filter((r) => !r.allCorrect);
+
+    if (mistakes.length === 0) {
+      listEl.innerHTML = `<p class="test-summary-perfect">Все 29 элементов пройдены без ошибок! Отличная работа.</p>`;
+    } else {
+      const title = document.createElement("p");
+      title.className = "test-summary-subtitle";
+      title.textContent = `Стоит повторить (${mistakes.length}):`;
+      listEl.appendChild(title);
+      mistakes.forEach((r) => {
+        const item = document.createElement("div");
+        item.className = "test-mistake";
+        item.innerHTML = `
+          <div class="test-mistake-name">${r.el.nameRu} (${r.el.symbol})</div>
+          <div class="test-mistake-detail">Символ: ${r.el.symbol} · Валентность: ${r.el.valence} · Читается: ${r.el.pronunciation}</div>
+        `;
+        listEl.appendChild(item);
+        // Auto-mark as "to review" for the studied-progress tracker
+        setStatus(r.el.symbol, "review");
+      });
+    }
+  }
+
+  function exitTestToCards() {
+    viewMode = "cards";
+    showView("cards");
+    testCardEl.classList.remove("hidden");
+    testSummaryEl.classList.add("hidden");
+    render();
+  }
+
+  document.getElementById("exitTest").addEventListener("click", exitTestToCards);
+  document.getElementById("exitTestSummary").addEventListener("click", exitTestToCards);
+  document.getElementById("restartTest").addEventListener("click", startTest);
 
   // ===== Main render =====
   function render() {
