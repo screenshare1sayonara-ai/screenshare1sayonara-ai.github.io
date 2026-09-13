@@ -4,32 +4,85 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0f172a">
-  <title>Изучение химических элементов</title>
+  <meta name="description" content="Изучение химических элементов — карточки, викторина, произношение">
+  <title>Элементы · Химия</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- SVG Sprite -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+    <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </symbol>
+    <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+    </symbol>
+    <symbol id="icon-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+    </symbol>
+    <symbol id="icon-table" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18"/>
+    </symbol>
+    <symbol id="icon-quiz" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </symbol>
+    <symbol id="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </symbol>
+    <symbol id="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </symbol>
+    <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+    </symbol>
+    <symbol id="icon-volume" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+    </symbol>
+    <symbol id="icon-atom" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="2.5" fill="currentColor"/>
+      <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(0 12 12)"/>
+      <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/>
+      <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/>
+    </symbol>
+    <symbol id="icon-flask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 3h6M10 3v6.5L5.5 18a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3L14 9.5V3"/>
+      <path d="M8.5 14h7"/>
+    </symbol>
+  </svg>
+
   <header class="header">
     <div class="header-top">
-      <h1 class="logo">🧪 Элементы</h1>
+      <div class="logo">
+        <svg class="logo-icon" width="28" height="28"><use href="#icon-atom"/></svg>
+        <span>Элементы</span>
+      </div>
       <div class="header-actions">
         <button id="themeToggle" class="icon-btn" aria-label="Сменить тему" title="Тема">
-          <span class="theme-icon">🌙</span>
+          <svg class="theme-icon-svg" width="22" height="22"><use href="#icon-moon"/></svg>
         </button>
         <button id="viewToggle" class="icon-btn" aria-label="Переключить вид" title="Карточки / Таблица">
-          <span>📊</span>
+          <svg width="22" height="22"><use href="#icon-table"/></svg>
         </button>
-        <button id="quizBtn" class="icon-btn" aria-label="Викторина" title="Викторина">
-          <span>❓</span>
+        <button id="quizBtn" class="icon-btn quiz-btn" aria-label="Викторина" title="Викторина">
+          <svg width="22" height="22"><use href="#icon-quiz"/></svg>
         </button>
       </div>
     </div>
+
     <div class="search-bar">
+      <svg class="search-icon" width="20" height="20"><use href="#icon-search"/></svg>
       <input type="search" id="searchInput" placeholder="Поиск по названию или символу..." autocomplete="off">
-      <button id="clearSearch" class="clear-btn" aria-label="Очистить">×</button>
+      <button id="clearSearch" class="clear-btn" aria-label="Очистить">
+        <svg width="18" height="18"><use href="#icon-x"/></svg>
+      </button>
     </div>
+
     <div class="filters" id="filters">
       <button class="filter-btn active" data-filter="all">Все</button>
       <button class="filter-btn" data-filter="alkali">Щелочные</button>
@@ -49,23 +102,33 @@
     <div id="tableView" class="table-view hidden"></div>
     <div id="quizView" class="quiz-view hidden">
       <div class="quiz-card">
-        <div class="quiz-progress">Вопрос <span id="quizNum">1</span> / <span id="quizTotal">10</span></div>
+        <div class="quiz-header">
+          <div class="quiz-progress-bar">
+            <div class="quiz-progress-fill" id="quizProgressFill"></div>
+          </div>
+          <div class="quiz-progress-text">Вопрос <span id="quizNum">1</span> из <span id="quizTotal">10</span></div>
+        </div>
         <div id="quizQuestion" class="quiz-question"></div>
         <div id="quizOptions" class="quiz-options"></div>
         <div id="quizFeedback" class="quiz-feedback"></div>
-        <button id="nextQuiz" class="btn primary hidden">Следующий</button>
-        <button id="restartQuiz" class="btn secondary hidden">Начать заново</button>
-        <button id="exitQuiz" class="btn outline">Выйти</button>
+        <div class="quiz-actions">
+          <button id="nextQuiz" class="btn primary hidden">Следующий →</button>
+          <button id="restartQuiz" class="btn secondary hidden">Начать заново</button>
+          <button id="exitQuiz" class="btn outline">Выйти</button>
+        </div>
       </div>
     </div>
   </main>
 
   <footer class="footer">
-    <p>Прогресс: <span id="progressText">0 / 0</span> изучено</p>
-    <button id="resetProgress" class="btn-text">Сбросить прогресс</button>
+    <div class="progress-info">
+      <svg width="16" height="16"><use href="#icon-check"/></svg>
+      <span>Прогресс: <strong id="progressText">0 / 0</strong></span>
+    </div>
+    <button id="resetProgress" class="btn-text">Сбросить</button>
   </footer>
 
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
-</html>
+</html> 
