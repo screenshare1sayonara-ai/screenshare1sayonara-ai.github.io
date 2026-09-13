@@ -463,4 +463,4 @@
   // Init
   updateProgressText();
   render();
-})(); 
+})();
