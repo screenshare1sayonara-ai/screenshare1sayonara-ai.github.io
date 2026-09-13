@@ -270,4 +270,4 @@ const CATEGORY_LABELS = {
   nonmetal: "Неметаллы",
   halogen: "Галогены",
   metalloid: "Металлоиды"
-};
+}; 
