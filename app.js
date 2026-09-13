@@ -508,16 +508,26 @@
     return normalizeText(str).replace(/\s+/g, "");
   }
 
+  const ROMAN_MAP = { i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6, vii: 7, viii: 8, ix: 9, x: 10 };
+
+  function tokenToArabic(token) {
+    const t = token.toLowerCase().trim();
+    if (!t) return "";
+    if (ROMAN_MAP[t] !== undefined) return String(ROMAN_MAP[t]);
+    if (/^\d+$/.test(t)) return String(parseInt(t, 10)); // strips leading zeros too
+    return t; // leave unrecognized tokens as-is (won't match, which is correct)
+  }
+
   function normalizeValence(str) {
-    // Strip parenthetical detail like "(−1, +1)" — only the roman-numeral
-    // part is required to answer correctly.
+    // Strip parenthetical detail like "(−1, +1)" — only the main
+    // valence values are required to answer correctly.
     const core = (str || "").toString().split("(")[0];
     return core
-      .toLowerCase()
       .split(/[,;\s]+/)
       .map((s) => s.trim())
       .filter(Boolean)
-      .sort()
+      .map(tokenToArabic)
+      .sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0))
       .join(",");
   }
 
