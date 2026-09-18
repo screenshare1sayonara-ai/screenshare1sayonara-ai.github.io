@@ -138,37 +138,34 @@
       if (currentFilter === "all") return true;
       if (currentFilter === "studied") return getStatus(el.symbol) === "studied";
       if (currentFilter === "to-review") return getStatus(el.symbol) === "review";
+      if (currentFilter === "not-studied") return getStatus(el.symbol) === null;
       return el.category === currentFilter;
     });
   }
 
-  // ===== Beautiful Voice Synthesis =====
+  // ===== Voice: custom audio files + improved TTS =====
+  // Put files in ./audio/{Symbol}.mp3 or .ogg  (e.g. audio/Na.mp3)
+  let currentAudio = null;
+
   function pickBestVoice() {
     const voices = speechSynthesis.getVoices();
     if (!voices.length) return null;
 
-    // Priority list for high-quality Russian voices
-    const preferred = [
-      "Google русский",
-      "Google Русский",
-      "Microsoft Irina",
-      "Microsoft Pavel",
-      "Yuri",
-      "Milena",
-      "Katya",
-      "ru-RU",
-      "Russian"
-    ];
+    const rank = (v) => {
+      let s = 0;
+      const n = (v.name || "").toLowerCase();
+      const lang = (v.lang || "").toLowerCase();
+      if (lang.startsWith("ru")) s += 50;
+      if (n.includes("google") && lang.startsWith("ru")) s += 40;
+      if (n.includes("neural") || n.includes("premium") || n.includes("enhanced")) s += 30;
+      if (n.includes("irina") || n.includes("milena") || n.includes("katya") || n.includes("elena")) s += 25;
+      if (n.includes("yuri") || n.includes("pavel") || n.includes("dmitri")) s += 15;
+      if (n.includes("microsoft") && lang.startsWith("ru")) s += 20;
+      if (v.localService === false) s += 5;
+      return s;
+    };
 
-    for (const name of preferred) {
-      const found = voices.find((v) =>
-        v.name.includes(name) || v.lang.startsWith("ru")
-      );
-      if (found) return found;
-    }
-
-    // Fallback: any Russian
-    return voices.find((v) => v.lang.startsWith("ru")) || voices[0];
+    return [...voices].sort((a, b) => rank(b) - rank(a))[0] || null;
   }
 
   function loadVoices() {
@@ -180,40 +177,124 @@
     speechSynthesis.onvoiceschanged = loadVoices;
   }
 
-  function speak(text, label = "Произношение...") {
+  function stopSpeaking() {
+    if (window.speechSynthesis) speechSynthesis.cancel();
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio = null;
+    }
+    speakingOverlay.classList.remove("visible");
+    document.querySelectorAll(".speak-btn.speaking").forEach((b) => {
+      b.classList.remove("speaking");
+    });
+  }
+
+  function showSpeakingUI(label) {
+    speakingOverlay.querySelector(".speak-label").textContent = label;
+    speakingOverlay.classList.add("visible");
+  }
+
+  function hideSpeakingUI() {
+    speakingOverlay.classList.remove("visible");
+    document.querySelectorAll(".speak-btn.speaking").forEach((b) => {
+      b.classList.remove("speaking");
+    });
+  }
+
+  /** Try custom file audio/{symbol}.mp3|.ogg — returns true if playing */
+  function tryPlayCustomAudio(symbol, label) {
+    if (!symbol) return Promise.resolve(false);
+
+    const candidates = [
+      "audio/" + symbol + ".mp3",
+      "audio/" + symbol + ".ogg",
+      "audio/" + symbol.toLowerCase() + ".mp3",
+      "audio/" + symbol.toLowerCase() + ".ogg"
+    ];
+
+    return new Promise((resolve) => {
+      let i = 0;
+      const tryNext = () => {
+        if (i >= candidates.length) {
+          resolve(false);
+          return;
+        }
+        const src = candidates[i++];
+        const audio = new Audio();
+        audio.preload = "auto";
+
+        const onError = () => {
+          audio.removeEventListener("canplaythrough", onReady);
+          audio.removeEventListener("error", onError);
+          tryNext();
+        };
+
+        const onReady = () => {
+          audio.removeEventListener("canplaythrough", onReady);
+          audio.removeEventListener("error", onError);
+          stopSpeaking();
+          currentAudio = audio;
+          showSpeakingUI(label);
+          audio.onended = () => {
+            currentAudio = null;
+            hideSpeakingUI();
+          };
+          audio.onerror = () => {
+            currentAudio = null;
+            hideSpeakingUI();
+          };
+          audio.play().then(function () {
+            resolve(true);
+          }).catch(function () {
+            currentAudio = null;
+            tryNext();
+          });
+        };
+
+        audio.addEventListener("canplaythrough", onReady, { once: true });
+        audio.addEventListener("error", onError, { once: true });
+        audio.src = src;
+        audio.load();
+      };
+      tryNext();
+    });
+  }
+
+  function speakTTS(text, label) {
     if (!window.speechSynthesis) {
-      alert("Озвучка не поддерживается в этом браузере");
+      alert("Озвучка не поддерживается. Добавьте файлы в папку audio/.");
+      hideSpeakingUI();
       return;
     }
 
     speechSynthesis.cancel();
+    setTimeout(function () {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "ru-RU";
+      utter.rate = 0.92;
+      utter.pitch = 1.0;
+      utter.volume = 1;
 
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = "ru-RU";
-    utter.rate = 0.88;          // slightly slower = clearer
-    utter.pitch = 1.05;         // a bit higher = more pleasant
-    utter.volume = 1;
+      if (preferredVoice) {
+        utter.voice = preferredVoice;
+        if (preferredVoice.lang) utter.lang = preferredVoice.lang;
+      }
 
-    if (preferredVoice) {
-      utter.voice = preferredVoice;
-    }
+      showSpeakingUI(label);
+      utter.onend = hideSpeakingUI;
+      utter.onerror = hideSpeakingUI;
+      speechSynthesis.speak(utter);
+    }, 40);
+  }
 
-    // UI feedback
-    speakingOverlay.querySelector(".speak-label").textContent = label;
-    speakingOverlay.classList.add("visible");
-
-    utter.onend = () => {
-      speakingOverlay.classList.remove("visible");
-      document.querySelectorAll(".speak-btn.speaking").forEach((b) => {
-        b.classList.remove("speaking");
-      });
-    };
-
-    utter.onerror = () => {
-      speakingOverlay.classList.remove("visible");
-    };
-
-    speechSynthesis.speak(utter);
+  /** Speak: custom audio first, then TTS. symbol = element symbol for file lookup */
+  async function speak(text, label, symbol) {
+    if (label === undefined) label = "Произношение...";
+    if (symbol === undefined) symbol = null;
+    stopSpeaking();
+    const usedCustom = await tryPlayCustomAudio(symbol, label);
+    if (usedCustom) return;
+    speakTTS(text, label);
   }
 
   // ===== Render Cards =====
@@ -244,11 +325,18 @@
         ? `<svg width="16" height="16"><use href="#icon-refresh"/></svg>`
         : `<svg width="14" height="14" style="opacity:0.4"><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>`;
 
+      const statusTitle = status === "studied"
+        ? "Изучено — нажмите, чтобы отметить «повторить»"
+        : status === "review"
+        ? "Повторить — нажмите, чтобы сбросить"
+        : "Не изучено — нажмите, чтобы отметить «изучено»";
+
       card.innerHTML = `
         <div class="card-inner">
           <div class="card-front">
             <span class="card-number">${el.atomicNumber}</span>
-            <button class="card-status ${status || ""}" data-action="status" aria-label="Статус изучения">
+            <button class="card-status ${status || ""}" data-action="status"
+                    aria-label="${statusTitle}" title="${statusTitle}">
               ${statusIcon}
             </button>
             <div class="card-symbol">${el.symbol}</div>
@@ -258,7 +346,7 @@
             <div class="card-lat">${el.nameLat}</div>
             <div class="card-pron">[${el.pronunciation}]</div>
             <div class="card-valence">Валентность: ${el.valence}</div>
-            <button class="speak-btn" data-action="speak">
+            <button class="speak-btn" data-action="speak" title="Произнести название вслух">
               <svg width="15" height="15"><use href="#icon-volume"/></svg>
               Произнести
             </button>
@@ -275,9 +363,8 @@
           } else if (action.dataset.action === "speak") {
             const btn = action;
             btn.classList.add("speaking");
-            // Natural phrase: full name + transcription hint
-            const phrase = `${el.nameRu}. Произносится как ${el.pronunciation}`;
-            speak(phrase, el.nameRu);
+            // Short natural phrase; custom audio/{symbol}.mp3 takes priority
+            speak(el.nameRu, el.nameRu, el.symbol);
           }
           return;
         }
@@ -313,6 +400,15 @@
     const btn = cardEl.querySelector(".card-status");
     btn.className = `card-status ${next || ""}`;
 
+    const title = next === "studied"
+      ? "Изучено — нажмите, чтобы отметить «повторить»"
+      : next === "review"
+      ? "Повторить — нажмите, чтобы сбросить"
+      : "Не изучено — нажмите, чтобы отметить «изучено»";
+
+    btn.setAttribute("title", title);
+    btn.setAttribute("aria-label", title);
+
     if (next === "studied") {
       btn.innerHTML = `<svg width="16" height="16"><use href="#icon-check"/></svg>`;
     } else if (next === "review") {
@@ -345,7 +441,7 @@
       `;
       cell.title = `${el.nameRu} (${el.symbol})`;
       cell.addEventListener("click", () => {
-        speak(`${el.nameRu}. ${el.pronunciation}`, el.nameRu);
+        speak(el.nameRu, el.nameRu, el.symbol);
       });
       grid.appendChild(cell);
     });
@@ -676,6 +772,271 @@
   document.getElementById("exitTest").addEventListener("click", exitTestToCards);
   document.getElementById("exitTestSummary").addEventListener("click", exitTestToCards);
   document.getElementById("restartTest").addEventListener("click", startTest);
+
+  // ===== Help modal =====
+  const helpModal = document.getElementById("helpModal");
+  const helpBtn = document.getElementById("helpBtn");
+
+  function openHelp() {
+    helpModal.classList.remove("hidden");
+  }
+
+  function closeHelp() {
+    helpModal.classList.add("hidden");
+  }
+
+  if (helpBtn) {
+    helpBtn.addEventListener("click", openHelp);
+  }
+  document.getElementById("closeHelp")?.addEventListener("click", closeHelp);
+  document.getElementById("gotItHelp")?.addEventListener("click", closeHelp);
+  helpModal?.addEventListener("click", (e) => {
+    if (e.target === helpModal) closeHelp();
+  });
+
+  // Show help once for first-time users
+  if (!localStorage.getItem("chemHelpSeen")) {
+    setTimeout(() => {
+      openHelp();
+      localStorage.setItem("chemHelpSeen", "1");
+    }, 600);
+  }
+
+  // ===== Site Tour =====
+  const TOUR_STEPS = [
+    {
+      target: null,
+      title: "Добро пожаловать!",
+      text: "Это сайт для изучения химических элементов. За минуту покажу все основные возможности — можно пропустить тур в любой момент."
+    },
+    {
+      target: "search",
+      title: "Поиск",
+      text: "Введите название или символ элемента (например, «Na» или «натрий»). Результаты обновляются мгновенно."
+    },
+    {
+      target: "filters",
+      title: "Фильтры",
+      text: "Верхний ряд — группы элементов (щелочные, галогены…). Нижний ряд — по прогрессу: «Не изучено», «Изучено», «Повторить»."
+    },
+    {
+      target: "cards",
+      title: "Карточки",
+      text: "Нажмите на карточку — она перевернётся и покажет полное название, произношение и валентность. На телефоне можно свайпать."
+    },
+    {
+      target: "cards",
+      title: "Статус изучения",
+      text: "В правом верхнем углу карточки — кнопка статуса. Нажимайте: не изучено → изучено → повторить. Прогресс сохраняется автоматически."
+    },
+    {
+      target: "theme",
+      title: "Тема и вид",
+      text: "Переключайте светлую/тёмную тему и вид «карточки / таблица». Всё запоминается."
+    },
+    {
+      target: "quiz",
+      title: "Викторина",
+      text: "Проверьте себя: угадайте элемент по символу или наоборот. 10 вопросов с выбором ответа."
+    },
+    {
+      target: "test",
+      title: "Тест с нуля",
+      text: "Самый сложный режим: сами напишите символ, валентность и произношение. В конце увидите ошибки и что стоит повторить."
+    },
+    {
+      target: "progress",
+      title: "Прогресс",
+      text: "Внизу всегда видно, сколько элементов вы уже отметили как изученные. Можно сбросить прогресс при необходимости."
+    },
+    {
+      target: null,
+      title: "Готово!",
+      text: "Теперь вы знаете, как пользоваться сайтом. Удачного изучения! Тур всегда можно запустить снова кнопкой с иконкой книги."
+    }
+  ];
+
+  let tourIndex = 0;
+  let tourActive = false;
+
+  const tourOverlay = document.getElementById("tourOverlay");
+  const tourSpotlight = document.getElementById("tourSpotlight");
+  const tourTooltip = document.getElementById("tourTooltip");
+  const tourStepNum = document.getElementById("tourStepNum");
+  const tourStepTotal = document.getElementById("tourStepTotal");
+  const tourTitle = document.getElementById("tourTitle");
+  const tourText = document.getElementById("tourText");
+  const tourProgressFill = document.getElementById("tourProgressFill");
+  const tourBack = document.getElementById("tourBack");
+  const tourNext = document.getElementById("tourNext");
+
+  function clearTourHighlight() {
+    document.querySelectorAll(".tour-highlight").forEach((el) => {
+      el.classList.remove("tour-highlight");
+    });
+  }
+
+  function positionTooltip(targetEl) {
+    const tip = tourTooltip;
+    // Force layout so measurements are accurate
+    tip.style.visibility = "hidden";
+    tip.classList.remove("hidden");
+    const tipW = Math.min(tip.offsetWidth || 360, window.innerWidth - 32);
+    const tipH = tip.offsetHeight || 220;
+    tip.style.visibility = "";
+
+    const margin = 16;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const maxTop = Math.max(margin, vh - tipH - margin);
+
+    let top, left;
+
+    if (!targetEl) {
+      // Centered for welcome / finish steps
+      top = Math.max(margin, Math.min(maxTop, (vh - tipH) / 2));
+      left = Math.max(margin, (vw - tipW) / 2);
+    } else {
+      const rect = targetEl.getBoundingClientRect();
+      left = rect.left + rect.width / 2 - tipW / 2;
+
+      // Prefer above the target if it sits in the lower half of the screen
+      // (footer, bottom cards, etc.) — otherwise prefer below
+      const preferAbove = rect.top > vh * 0.45 || rect.bottom > vh - 120;
+
+      if (preferAbove) {
+        top = rect.top - tipH - 14;
+        // If still doesn't fit above — place in safe zone above target as much as possible
+        if (top < margin) {
+          top = margin;
+        }
+      } else {
+        top = rect.bottom + 14;
+        if (top + tipH > vh - margin) {
+          top = rect.top - tipH - 14;
+        }
+      }
+
+      // Hard clamp: never leave the viewport
+      top = Math.max(margin, Math.min(maxTop, top));
+      left = Math.max(margin, Math.min(vw - tipW - margin, left));
+    }
+
+    tip.style.top = `${Math.round(top)}px`;
+    tip.style.left = `${Math.round(left)}px`;
+  }
+
+  function updateSpotlight(targetEl) {
+    if (!targetEl) {
+      tourSpotlight.style.opacity = "0";
+      tourSpotlight.style.width = "0";
+      tourSpotlight.style.height = "0";
+      return;
+    }
+    const rect = targetEl.getBoundingClientRect();
+    const pad = 8;
+    tourSpotlight.style.opacity = "1";
+    tourSpotlight.style.top = `${rect.top - pad}px`;
+    tourSpotlight.style.left = `${rect.left - pad}px`;
+    tourSpotlight.style.width = `${rect.width + pad * 2}px`;
+    tourSpotlight.style.height = `${rect.height + pad * 2}px`;
+  }
+
+  function showTourStep(index) {
+    tourIndex = index;
+    const step = TOUR_STEPS[index];
+    const total = TOUR_STEPS.length;
+
+    tourStepNum.textContent = index + 1;
+    tourStepTotal.textContent = total;
+    tourTitle.textContent = step.title;
+    tourText.textContent = step.text;
+    tourProgressFill.style.width = `${((index + 1) / total) * 100}%`;
+
+    tourBack.disabled = index === 0;
+    tourNext.textContent = index === total - 1 ? "Готово" : "Дальше";
+
+    clearTourHighlight();
+
+    let targetEl = null;
+    if (step.target) {
+      targetEl = document.querySelector(`[data-tour="${step.target}"]`);
+      if (targetEl) {
+        targetEl.classList.add("tour-highlight");
+        if (step.target === "cards" && viewMode !== "cards") {
+          viewMode = "cards";
+          showView("cards");
+          render();
+          targetEl = document.querySelector(`[data-tour="cards"]`);
+          if (targetEl) targetEl.classList.add("tour-highlight");
+        }
+        // Scroll target into view so spotlight + tooltip have room
+        try {
+          targetEl.scrollIntoView({ block: "nearest", behavior: "instant" });
+        } catch (_) {
+          targetEl.scrollIntoView(false);
+        }
+      }
+    }
+
+    // Double rAF: wait for scroll + layout, then measure & place
+    requestAnimationFrame(() => {
+      updateSpotlight(targetEl);
+      requestAnimationFrame(() => {
+        positionTooltip(targetEl);
+      });
+    });
+  }
+
+  function startTour() {
+    closeHelp();
+    if (viewMode !== "cards" && viewMode !== "table") {
+      viewMode = "cards";
+      showView("cards");
+      render();
+    }
+    tourActive = true;
+    document.body.classList.add("tour-active");
+    tourOverlay.classList.remove("hidden");
+    tourTooltip.classList.remove("hidden");
+    showTourStep(0);
+  }
+
+  function endTour() {
+    tourActive = false;
+    document.body.classList.remove("tour-active");
+    tourOverlay.classList.add("hidden");
+    tourTooltip.classList.add("hidden");
+    clearTourHighlight();
+    localStorage.setItem("chemTourSeen", "1");
+  }
+
+  document.getElementById("tourBtn")?.addEventListener("click", startTour);
+  document.getElementById("startTourFromHelp")?.addEventListener("click", startTour);
+  document.getElementById("tourClose")?.addEventListener("click", endTour);
+  document.getElementById("tourSkip")?.addEventListener("click", endTour);
+
+  tourNext?.addEventListener("click", () => {
+    if (tourIndex >= TOUR_STEPS.length - 1) {
+      endTour();
+    } else {
+      showTourStep(tourIndex + 1);
+    }
+  });
+
+  tourBack?.addEventListener("click", () => {
+    if (tourIndex > 0) showTourStep(tourIndex - 1);
+  });
+
+  window.addEventListener("resize", () => {
+    if (!tourActive) return;
+    const step = TOUR_STEPS[tourIndex];
+    const targetEl = step.target
+      ? document.querySelector(`[data-tour="${step.target}"]`)
+      : null;
+    updateSpotlight(targetEl);
+    positionTooltip(targetEl);
+  });
 
   // ===== Main render =====
   function render() {
