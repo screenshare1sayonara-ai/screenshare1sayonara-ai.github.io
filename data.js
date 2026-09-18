@@ -103,7 +103,7 @@ const ELEMENTS = [
     nameRu: "Углерод",
     nameLat: "Carboneum",
     pronunciation: "це",
-    valence: "II, IV",
+    valence: "IV",
     category: "nonmetal",
     atomicNumber: 6
   },
@@ -112,7 +112,7 @@ const ELEMENTS = [
     nameRu: "Кремний",
     nameLat: "Silicium",
     pronunciation: "силициум",
-    valence: "II, IV",
+    valence: "IV",
     category: "metalloid",
     atomicNumber: 14
   },
@@ -139,7 +139,7 @@ const ELEMENTS = [
     nameRu: "Азот",
     nameLat: "Nitrogenium",
     pronunciation: "эн",
-    valence: "III, V (−3…+5)",
+    valence: "I, II, III, IV, V",
     category: "nonmetal",
     atomicNumber: 7
   },
@@ -220,7 +220,7 @@ const ELEMENTS = [
     nameRu: "Серебро",
     nameLat: "Argentum",
     pronunciation: "аргентум",
-    valence: "I",
+    valence: "I, II",
     category: "transition",
     atomicNumber: 47
   },
@@ -270,4 +270,4 @@ const CATEGORY_LABELS = {
   nonmetal: "Неметаллы",
   halogen: "Галогены",
   metalloid: "Металлоиды"
-}; 
+};
