@@ -54,6 +54,21 @@
       <path d="M9 3h6M10 3v6.5L5.5 18a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3L14 9.5V3"/>
       <path d="M8.5 14h7"/>
     </symbol>
+    <symbol id="icon-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </symbol>
+    <symbol id="icon-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="16" x2="12" y2="12"/>
+      <line x1="12" y1="8" x2="12.01" y2="8"/>
+    </symbol>
+    <symbol id="icon-tour" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      <path d="M8 7h8M8 11h6"/>
+    </symbol>
   </svg>
 
   <header class="header">
@@ -63,22 +78,28 @@
         <span>Элементы</span>
       </div>
       <div class="header-actions">
-        <button id="themeToggle" class="icon-btn" aria-label="Сменить тему" title="Тема">
+        <button id="tourBtn" class="icon-btn" aria-label="Тур по сайту" title="Пройти тур по сайту">
+          <svg width="22" height="22"><use href="#icon-tour"/></svg>
+        </button>
+        <button id="helpBtn" class="icon-btn" aria-label="Справка" title="Как пользоваться">
+          <svg width="22" height="22"><use href="#icon-help"/></svg>
+        </button>
+        <button id="themeToggle" class="icon-btn" aria-label="Сменить тему" title="Светлая / тёмная тема" data-tour="theme">
           <svg class="theme-icon-svg" width="22" height="22"><use href="#icon-moon"/></svg>
         </button>
-        <button id="viewToggle" class="icon-btn" aria-label="Переключить вид" title="Карточки / Таблица">
+        <button id="viewToggle" class="icon-btn" aria-label="Переключить вид" title="Карточки или таблица" data-tour="view">
           <svg width="22" height="22"><use href="#icon-table"/></svg>
         </button>
-        <button id="quizBtn" class="icon-btn quiz-btn" aria-label="Викторина" title="Викторина (выбор варианта)">
+        <button id="quizBtn" class="icon-btn quiz-btn" aria-label="Викторина" title="Викторина: выбрать правильный ответ" data-tour="quiz">
           <svg width="22" height="22"><use href="#icon-quiz"/></svg>
         </button>
-        <button id="testBtn" class="icon-btn test-btn" aria-label="Тест с нуля" title="Тест: написать с нуля">
+        <button id="testBtn" class="icon-btn test-btn" aria-label="Тест с нуля" title="Тест: написать символ, валентность и произношение" data-tour="test">
           <svg width="22" height="22"><use href="#icon-flask"/></svg>
         </button>
       </div>
     </div>
 
-    <div class="search-bar">
+    <div class="search-bar" data-tour="search">
       <svg class="search-icon" width="20" height="20"><use href="#icon-search"/></svg>
       <input type="search" id="searchInput" placeholder="Поиск по названию или символу..." autocomplete="off">
       <button id="clearSearch" class="clear-btn" aria-label="Очистить">
@@ -86,7 +107,7 @@
       </button>
     </div>
 
-    <div class="filters" id="filters">
+    <div class="filters" id="filters" data-tour="filters">
       <button class="filter-btn active" data-filter="all">Все</button>
       <button class="filter-btn" data-filter="alkali">Щелочные</button>
       <button class="filter-btn" data-filter="alkaline-earth">Щёлочноземельные</button>
@@ -95,13 +116,14 @@
       <button class="filter-btn" data-filter="nonmetal">Неметаллы</button>
       <button class="filter-btn" data-filter="halogen">Галогены</button>
       <button class="filter-btn" data-filter="metalloid">Металлоиды</button>
+      <button class="filter-btn" data-filter="not-studied">Не изучено</button>
       <button class="filter-btn" data-filter="studied">Изучено</button>
       <button class="filter-btn" data-filter="to-review">Повторить</button>
     </div>
   </header>
 
   <main>
-    <div id="cardsView" class="cards-grid"></div>
+    <div id="cardsView" class="cards-grid" data-tour="cards"></div>
     <div id="tableView" class="table-view hidden"></div>
     <div id="quizView" class="quiz-view hidden">
       <div class="quiz-card">
@@ -177,12 +199,97 @@
     </div>
   </main>
 
-  <footer class="footer">
+  <!-- Help modal -->
+  <div id="helpModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="helpTitle">Как пользоваться</h2>
+        <button id="closeHelp" class="icon-btn" aria-label="Закрыть">
+          <svg width="20" height="20"><use href="#icon-x"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="help-item">
+          <div class="help-icon"><svg width="22" height="22"><use href="#icon-grid"/></svg></div>
+          <div>
+            <strong>Карточки</strong>
+            <p>Нажмите на карточку, чтобы перевернуть и увидеть название, произношение и валентность. Свайп влево/вправо тоже работает.</p>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon status-demo studied"><svg width="18" height="18"><use href="#icon-check"/></svg></div>
+          <div>
+            <strong>Статус изучения</strong>
+            <p>Кнопка в правом верхнем углу карточки: <em>не изучено</em> → <em>изучено</em> → <em>повторить</em>. Нажимайте, чтобы отметить прогресс.</p>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon"><svg width="22" height="22"><use href="#icon-volume"/></svg></div>
+          <div>
+            <strong>Озвучка</strong>
+            <p>На обратной стороне карточки кнопка «Произнести» — услышите правильное название.</p>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon"><svg width="22" height="22"><use href="#icon-quiz"/></svg></div>
+          <div>
+            <strong>Викторина</strong>
+            <p>Выберите правильный ответ из 4 вариантов (символ ↔ название).</p>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon"><svg width="22" height="22"><use href="#icon-flask"/></svg></div>
+          <div>
+            <strong>Тест с нуля</strong>
+            <p>Самостоятельно напишите символ, валентность и произношение элемента.</p>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon"><svg width="22" height="22"><use href="#icon-table"/></svg></div>
+          <div>
+            <strong>Таблица</strong>
+            <p>Компактный вид всех элементов. Нажмите на ячейку, чтобы услышать название.</p>
+          </div>
+        </div>
+      </div>
+      <div class="help-actions">
+        <button id="startTourFromHelp" class="btn secondary">Пройти тур по сайту</button>
+        <button id="gotItHelp" class="btn primary">Понятно</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Site Tour -->
+  <div id="tourOverlay" class="tour-overlay hidden" aria-hidden="true">
+    <div id="tourSpotlight" class="tour-spotlight"></div>
+  </div>
+  <div id="tourTooltip" class="tour-tooltip hidden" role="dialog" aria-modal="true">
+    <div class="tour-tooltip-top">
+      <span class="tour-step-count"><span id="tourStepNum">1</span> / <span id="tourStepTotal">8</span></span>
+      <button id="tourClose" class="tour-close" aria-label="Закрыть тур">
+        <svg width="18" height="18"><use href="#icon-x"/></svg>
+      </button>
+    </div>
+    <h3 id="tourTitle" class="tour-title"></h3>
+    <p id="tourText" class="tour-text"></p>
+    <div class="tour-progress-bar">
+      <div id="tourProgressFill" class="tour-progress-fill"></div>
+    </div>
+    <div class="tour-actions">
+      <button id="tourSkip" class="tour-btn-text">Пропустить</button>
+      <div class="tour-nav">
+        <button id="tourBack" class="tour-btn-ghost">Назад</button>
+        <button id="tourNext" class="tour-btn-primary">Дальше</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer" data-tour="progress">
     <div class="progress-info">
       <svg width="16" height="16"><use href="#icon-check"/></svg>
       <span>Прогресс: <strong id="progressText">0 / 0</strong></span>
     </div>
-    <button id="resetProgress" class="btn-text">Сбросить</button>
+    <button id="resetProgress" class="btn-text">Сбросить прогресс</button>
   </footer>
 
   <script src="data.js"></script>
